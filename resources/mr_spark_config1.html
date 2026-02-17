@@ -1,0 +1,2272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MR → Spark Migration · Configure</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:        #07090f;
+  --bg2:       #0c0f1a;
+  --bg3:       #101525;
+  --card:      #111827;
+  --card2:     #141d2e;
+  --border:    #1c2a3f;
+  --border2:   #243347;
+  --blue:      #4f8ef7;
+  --blue-dim:  #2d5fa8;
+  --cyan:      #22d3ee;
+  --green:     #34d399;
+  --amber:     #fbbf24;
+  --red:       #f87171;
+  --pink:      #f472b6;
+  --purple:    #a78bfa;
+  --text:      #e2e8f0;
+  --text2:     #94a3b8;
+  --text3:     #475569;
+  --success:   #10b981;
+  --warn:      #f59e0b;
+  --danger:    #ef4444;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── BACKGROUND GRID ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(79,142,247,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,142,247,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ambient glow blobs */
+body::after {
+  content: '';
+  position: fixed;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(79,142,247,0.06) 0%, transparent 70%);
+  top: -200px; right: -100px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ambient2 {
+  position: fixed;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(34,211,238,0.04) 0%, transparent 70%);
+  bottom: -150px; left: -100px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 48px 32px 80px;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 48px;
+  animation: fadeDown 0.5s ease both;
+}
+
+.header-left {}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pipe-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  border: 1px solid rgba(34,211,238,0.3);
+  background: rgba(34,211,238,0.06);
+  padding: 3px 10px 3px 8px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pipe-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.4; transform:scale(0.8); }
+}
+
+h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+h1 em {
+  font-style: normal;
+  color: var(--blue);
+}
+
+.header-desc {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 400;
+  max-width: 520px;
+  line-height: 1.6;
+}
+
+.steps-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.step-dot-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.step-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border2);
+  transition: background 0.3s;
+}
+
+.step-dot.active { background: var(--blue); }
+.step-dot.done { background: var(--green); }
+
+.step-label {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.06em;
+  font-family: 'Fira Code', monospace;
+}
+
+/* ── SECTION ── */
+.section {
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+  animation: fadeUp 0.4s ease both;
+}
+
+.section:nth-child(1) { animation-delay: 0.05s; }
+.section:nth-child(2) { animation-delay: 0.1s; }
+.section:nth-child(3) { animation-delay: 0.15s; }
+.section:nth-child(4) { animation-delay: 0.2s; }
+.section:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+@keyframes fadeDown {
+  from { opacity:0; transform:translateY(-10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  background: var(--card2);
+  transition: background 0.2s;
+}
+
+.section-header:hover { background: #161f30; }
+
+.section-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.section-title-wrap {}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.section-subtitle {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 1px;
+}
+
+.section-chevron {
+  font-size: 12px;
+  color: var(--text3);
+  transition: transform 0.3s;
+}
+
+.section.collapsed .section-chevron { transform: rotate(-90deg); }
+.section.collapsed .section-body { display: none; }
+
+.section-body {
+  padding: 24px 22px;
+}
+
+/* ── FORM ELEMENTS ── */
+.field-group {
+  display: grid;
+  gap: 20px;
+}
+
+.field-group.cols-2 { grid-template-columns: 1fr 1fr; }
+.field-group.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.field-group.cols-1 { grid-template-columns: 1fr; }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.required-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--red);
+  display: inline-block;
+}
+
+.optional-tag {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text3);
+  border: 1px solid var(--border2);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+input[type="text"],
+input[type="url"],
+input[type="password"],
+select,
+textarea {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  color: var(--text);
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  width: 100%;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(79,142,247,0.12);
+  background: #0d1120;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text3);
+  font-weight: 300;
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23475569' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.6;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.5;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ── INPUT WITH ICON ── */
+.input-icon-wrap {
+  position: relative;
+}
+
+.input-icon-wrap .icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-icon-wrap input {
+  padding-left: 36px;
+}
+
+/* ── INPUT WITH SUFFIX ── */
+.input-suffix-wrap {
+  position: relative;
+  display: flex;
+}
+
+.input-suffix-wrap input {
+  border-radius: 7px 0 0 7px;
+  border-right: none;
+  flex: 1;
+}
+
+.input-suffix {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-left: none;
+  border-radius: 0 7px 7px 0;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'Fira Code', monospace;
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* ── REPO BRANCH SELECTOR ── */
+.repo-row {
+  display: flex;
+  gap: 10px;
+}
+
+.repo-row .input-icon-wrap {
+  flex: 1;
+}
+
+.branch-btn {
+  flex-shrink: 0;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  color: var(--cyan);
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.branch-btn:hover {
+  background: rgba(34,211,238,0.08);
+  border-color: var(--cyan);
+}
+
+/* ── BRANCH DROPDOWN ── */
+.branch-dropdown {
+  position: relative;
+}
+
+.branch-dropdown-toggle {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  color: var(--text);
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color 0.2s;
+}
+
+.branch-dropdown-toggle:focus,
+.branch-dropdown-toggle.open {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(79,142,247,0.12);
+}
+
+.branch-list {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: #111827;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  z-index: 50;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+}
+
+.branch-list.open { display: block; }
+
+.branch-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.branch-option:hover { background: #1a2540; color: var(--text); }
+.branch-option.selected { background: rgba(79,142,247,0.1); color: var(--blue); }
+
+.branch-icon { font-size: 12px; }
+.branch-type-badge {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.branch-type-badge.main { background: rgba(52,211,153,0.12); color: var(--green); }
+.branch-type-badge.feature { background: rgba(79,142,247,0.12); color: var(--blue); }
+.branch-type-badge.release { background: rgba(251,191,36,0.12); color: var(--amber); }
+
+/* ── BUILD TOOL TOGGLE ── */
+.build-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg2);
+}
+
+.build-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-right: 1px solid var(--border2);
+  position: relative;
+}
+
+.build-option:last-child { border-right: none; }
+
+.build-option input[type="radio"] { display: none; }
+
+.build-option .build-icon {
+  font-size: 22px;
+  transition: transform 0.2s;
+}
+
+.build-option .build-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.build-option .build-desc {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.02em;
+}
+
+.build-option:hover { background: var(--bg3); }
+
+.build-option.selected {
+  background: rgba(79,142,247,0.08);
+}
+
+.build-option.selected .build-label { color: var(--blue); }
+.build-option.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 8px; right: 10px;
+  font-size: 11px;
+  color: var(--blue);
+  font-weight: 700;
+}
+
+/* ── VERSION PILLS ── */
+.version-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.version-pill {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: var(--bg2);
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.version-pill:hover {
+  border-color: var(--blue-dim);
+  color: var(--text);
+  background: var(--bg3);
+}
+
+.version-pill.selected {
+  border-color: var(--blue);
+  background: rgba(79,142,247,0.1);
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.version-pill.selected::before {
+  content: '●';
+  font-size: 8px;
+}
+
+.version-pill .pill-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.pill-tag.rec { background: rgba(52,211,153,0.15); color: var(--green); }
+.pill-tag.lts { background: rgba(251,191,36,0.15); color: var(--amber); }
+.pill-tag.old { background: rgba(107,114,128,0.15); color: #6b7280; }
+
+/* ── API APPROACH TOGGLE ── */
+.api-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.api-option {
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg2);
+  position: relative;
+}
+
+.api-option input[type="radio"] { display: none; }
+
+.api-option-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.api-option-icon { font-size: 16px; }
+
+.api-option-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.api-option-name .rec-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  background: rgba(52,211,153,0.15);
+  color: var(--green);
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  margin-left: 4px;
+}
+
+.api-option-desc {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.5;
+}
+
+.api-option:hover { border-color: var(--border); background: var(--bg3); }
+
+.api-option.selected {
+  border-color: var(--blue);
+  background: rgba(79,142,247,0.07);
+}
+
+.api-option.selected .api-option-name { color: var(--blue); }
+
+.api-option.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── RISK DETECTION ── */
+.risk-section { }
+
+.risk-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.risk-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: rgba(248,113,113,0.12);
+  color: var(--red);
+  border: 1px solid rgba(248,113,113,0.25);
+}
+
+.risk-desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.risk-pattern-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.risk-pattern-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  padding: 8px 12px;
+  transition: border-color 0.2s;
+}
+
+.risk-pattern-row:focus-within {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(248,113,113,0.08);
+}
+
+.risk-pattern-prefix {
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--amber);
+  flex-shrink: 0;
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.2);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.risk-pattern-input {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
+.risk-pattern-input:focus {
+  outline: none;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.risk-remove-btn {
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.risk-remove-btn:hover { color: var(--red); background: rgba(248,113,113,0.1); }
+
+.add-pattern-btn {
+  background: transparent;
+  border: 1px dashed var(--border2);
+  border-radius: 7px;
+  color: var(--text3);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  padding: 9px 16px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.add-pattern-btn:hover {
+  border-color: var(--blue-dim);
+  color: var(--blue);
+  background: rgba(79,142,247,0.04);
+}
+
+/* ── RISK LEVEL SELECTOR ── */
+.risk-level-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.risk-level-option {
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg2);
+  text-align: center;
+}
+
+.risk-level-option input { display: none; }
+.risk-level-label { font-size: 12px; font-weight: 600; }
+.risk-level-desc { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+.risk-level-option.warn-level:hover { border-color: var(--amber); }
+.risk-level-option.warn-level.selected { border-color: var(--amber); background: rgba(251,191,36,0.08); }
+.risk-level-option.warn-level.selected .risk-level-label { color: var(--amber); }
+
+.risk-level-option.block-level:hover { border-color: var(--red); }
+.risk-level-option.block-level.selected { border-color: var(--red); background: rgba(248,113,113,0.08); }
+.risk-level-option.block-level.selected .risk-level-label { color: var(--red); }
+
+.risk-level-option.info-level:hover { border-color: var(--blue); }
+.risk-level-option.info-level.selected { border-color: var(--blue); background: rgba(79,142,247,0.08); }
+.risk-level-option.info-level.selected .risk-level-label { color: var(--blue); }
+
+/* ── TOGGLE SWITCH ── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+
+.toggle-row:hover { border-color: var(--border2); }
+
+.toggle-info {}
+
+.toggle-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.toggle-desc {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border2);
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  left: 3px; top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider { background: var(--blue); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+/* ── SUMMARY PREVIEW ── */
+.config-preview {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 16px 18px;
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--text2);
+  margin-top: 8px;
+}
+
+.config-preview .k { color: var(--blue); }
+.config-preview .v { color: var(--green); }
+.config-preview .s { color: var(--amber); }
+.config-preview .c { color: var(--text3); }
+
+/* ── SUBMIT BAR ── */
+.submit-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  padding: 24px 0 0;
+  margin-top: 24px;
+}
+
+.submit-inner {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.4);
+}
+
+.submit-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.submit-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+  animation: pulse 2s infinite;
+}
+
+.submit-status-dot.ready { background: var(--green); }
+
+.submit-status-text {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.submit-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text2);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover { border-color: var(--text3); color: var(--text); }
+
+.btn-primary {
+  background: var(--blue);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 20px rgba(79,142,247,0.3);
+}
+
+.btn-primary:hover {
+  background: #6aa0f9;
+  box-shadow: 0 6px 28px rgba(79,142,247,0.45);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active { transform: translateY(0); }
+
+/* ── VALIDATED FIELD ── */
+.validated-wrap { position: relative; }
+.validated-wrap .check-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+/* ── DIVIDER ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}
+
+/* ── NOTIFICATION BANNER ── */
+.notif {
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.notif.warn {
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.2);
+  color: var(--amber);
+}
+
+.notif.info {
+  background: rgba(79,142,247,0.08);
+  border: 1px solid rgba(79,142,247,0.2);
+  color: var(--blue);
+}
+
+.notif.success {
+  background: rgba(52,211,153,0.08);
+  border: 1px solid rgba(52,211,153,0.2);
+  color: var(--green);
+}
+
+.notif-icon { flex-shrink: 0; margin-top: 1px; }
+
+/* ── SOURCE MODE TABS ── */
+.source-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.src-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 14px 18px;
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  background: var(--bg2);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.src-tab:hover {
+  border-color: var(--blue-dim);
+  background: var(--bg3);
+}
+
+.src-tab.active {
+  border-color: var(--blue);
+  background: rgba(79,142,247,0.08);
+  box-shadow: 0 0 0 1px rgba(79,142,247,0.15);
+}
+
+.src-tab-icon {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.src-tab-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.src-tab.active .src-tab-label { color: var(--blue); }
+
+.src-tab-desc {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* ── DROPZONE ── */
+.dropzone {
+  border: 1.5px dashed var(--border2);
+  border-radius: 10px;
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg2);
+  user-select: none;
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: var(--blue);
+  background: rgba(79,142,247,0.05);
+  box-shadow: 0 0 0 3px rgba(79,142,247,0.08);
+}
+
+.dropzone.dragover {
+  border-color: var(--cyan);
+  background: rgba(34,211,238,0.06);
+  transform: scale(1.01);
+}
+
+.dropzone.has-files {
+  border-color: var(--green);
+  background: rgba(52,211,153,0.04);
+  border-style: solid;
+}
+
+.dropzone-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+  display: block;
+  transition: transform 0.2s;
+}
+
+.dropzone:hover .dropzone-icon { transform: translateY(-3px); }
+
+.dropzone-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.dropzone-sub {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.dropzone-hint {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* ── SCAN RESULT ── */
+.scan-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.scan-result-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.03em;
+}
+
+.scan-clear-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  color: var(--text3);
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Outfit', sans-serif;
+}
+
+.scan-clear-btn:hover { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.06); }
+
+/* FILE TREE */
+.file-tree {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  line-height: 1.8;
+  max-height: 220px;
+  overflow-y: auto;
+  color: var(--text2);
+}
+
+.file-tree::-webkit-scrollbar { width: 4px; }
+.file-tree::-webkit-scrollbar-track { background: transparent; }
+.file-tree::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.ft-dir { color: var(--cyan); font-weight: 600; }
+.ft-java { color: var(--amber); }
+.ft-xml { color: var(--purple); }
+.ft-other { color: var(--text3); }
+.ft-driver { color: var(--green); font-weight: 600; }
+.ft-mapper { color: var(--blue); }
+.ft-reducer { color: var(--pink); }
+.ft-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.ft-tag.driver  { background: rgba(52,211,153,0.15); color: var(--green); }
+.ft-tag.mapper  { background: rgba(79,142,247,0.15); color: var(--blue); }
+.ft-tag.reducer { background: rgba(244,114,182,0.15); color: var(--pink); }
+
+.scan-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.scan-stat {
+  font-size: 11px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.scan-stat strong {
+  color: var(--text2);
+  font-weight: 700;
+}
+
+/* SOURCE PANEL */
+.source-panel { animation: fadeIn 0.25s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* RESPONSIVE */
+@media (max-width: 720px) {
+  .field-group.cols-2,
+  .field-group.cols-3 { grid-template-columns: 1fr; }
+  .api-toggle { grid-template-columns: 1fr; }
+  .risk-level-row { grid-template-columns: 1fr; }
+  .source-tabs { grid-template-columns: 1fr; }
+  h1 { font-size: 24px; }
+  .header { flex-direction: column; gap: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="ambient2"></div>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="eyebrow">
+        <div class="pipe-badge">Migration Pipeline v2.0</div>
+      </div>
+      <h1>Configure <em>Migration</em> Job</h1>
+      <p class="header-desc">Set your source repository, build tool, target Spark/Scala versions, API strategy and custom library risk detection rules before analysis begins.</p>
+    </div>
+    <div class="steps-indicator">
+      <div class="step-label">// pipeline stages</div>
+      <div class="step-dot-row">
+        <div class="step-dot active" title="Configure"></div>
+        <div class="step-dot" title="Scan"></div>
+        <div class="step-dot" title="Infer"></div>
+        <div class="step-dot" title="Codegen"></div>
+        <div class="step-dot" title="Validate"></div>
+        <div class="step-dot" title="Export"></div>
+      </div>
+      <div class="step-label">01 · configure</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SECTION 1: SOURCE REPOSITORY -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec-repo">
+    <div class="section-header" onclick="toggleSection('sec-repo')">
+      <div class="section-header-left">
+        <div class="section-icon" style="background:rgba(34,211,238,0.1);">🔗</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Source Repository</div>
+          <div class="section-subtitle" id="repoSectionSubtitle">Git URL, credentials and target branch · or scan a local directory</div>
+        </div>
+      </div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+
+      <!-- ── SOURCE MODE TABS ── -->
+      <div class="source-tabs" id="sourceTabs">
+        <button class="src-tab active" id="tab-git" onclick="switchSourceMode('git')">
+          <span class="src-tab-icon">⎇</span>
+          <span class="src-tab-label">Git Repository</span>
+          <span class="src-tab-desc">Clone &amp; scan from remote</span>
+        </button>
+        <button class="src-tab" id="tab-local" onclick="switchSourceMode('local')">
+          <span class="src-tab-icon">💾</span>
+          <span class="src-tab-label">Local Directory</span>
+          <span class="src-tab-desc">Scan files already on disk</span>
+        </button>
+      </div>
+
+      <!-- ══ GIT PANEL ══ -->
+      <div id="panel-git" class="source-panel">
+
+        <div class="field-group cols-1" style="margin-bottom:20px;">
+          <div class="field">
+            <label><span class="required-dot"></span> Repository URL</label>
+            <div class="input-icon-wrap validated-wrap">
+              <span class="icon">⎇</span>
+              <input type="url" id="repoUrl" placeholder="https://github.com/org/repo.git  or  git@bitbucket.org:org/repo.git"
+                oninput="validateRepo(this)" />
+              <span class="check-icon" id="repoCheck" style="display:none;color:var(--green)">✓</span>
+            </div>
+            <div class="field-hint">Supports GitHub, GitLab, Bitbucket — HTTPS or SSH. Internal GitLab instances also supported.</div>
+          </div>
+        </div>
+
+        <div class="field-group cols-2">
+          <div class="field">
+            <label><span class="required-dot"></span> Source Branch</label>
+            <div class="branch-dropdown" id="branchDrop">
+              <button type="button" class="branch-dropdown-toggle" onclick="toggleBranchDrop()" id="branchToggle">
+                <span id="branchSelected" style="font-family:'Fira Code',monospace;font-size:13px;color:var(--text2)">Select or type a branch...</span>
+                <span style="font-size:11px;color:var(--text3)">▼</span>
+              </button>
+              <div class="branch-list" id="branchList">
+                <div class="branch-option" onclick="selectBranch('main','main')"><span class="branch-icon">◉</span>main<span class="branch-type-badge main">default</span></div>
+                <div class="branch-option" onclick="selectBranch('master','master')"><span class="branch-icon">◉</span>master<span class="branch-type-badge main">default</span></div>
+                <div class="branch-option" onclick="selectBranch('develop','develop')"><span class="branch-icon">◎</span>develop<span class="branch-type-badge feature">feature</span></div>
+                <div class="branch-option" onclick="selectBranch('release/2.4','release/2.4')"><span class="branch-icon">⬡</span>release/2.4<span class="branch-type-badge release">release</span></div>
+                <div class="branch-option" onclick="selectBranch('feature/spark-migration','feature/spark-migration')"><span class="branch-icon">◎</span>feature/spark-migration<span class="branch-type-badge feature">feature</span></div>
+                <div style="padding:8px 14px;border-top:1px solid var(--border);"><input type="text" placeholder="Type custom branch name..." style="background:transparent;border:none;color:var(--text2);font-family:'Fira Code',monospace;font-size:12px;width:100%;outline:none;" oninput="typeBranch(this.value)" /></div>
+              </div>
+            </div>
+            <div class="field-hint">Branch containing the MapReduce Java source to migrate.</div>
+          </div>
+
+          <div class="field">
+            <label><span class="optional-tag">optional</span> Git Credentials / Token</label>
+            <div class="input-icon-wrap">
+              <span class="icon">🔑</span>
+              <input type="password" id="gitToken" placeholder="ghp_xxxxxxxxxxxx  /  PAT token" />
+            </div>
+            <div class="field-hint">Required for private repos. Stored in session only — never persisted.</div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="field-group cols-2">
+          <div class="field">
+            <label><span class="optional-tag">optional</span> Sub-directory path</label>
+            <div class="input-icon-wrap">
+              <span class="icon">📁</span>
+              <input type="text" id="gitSubdir" placeholder="e.g. src/main/java/com/company/mr" oninput="updatePreview()" />
+            </div>
+            <div class="field-hint">Leave blank to scan the entire repo root.</div>
+          </div>
+          <div class="field">
+            <label><span class="optional-tag">optional</span> Commit / Tag</label>
+            <div class="input-icon-wrap">
+              <span class="icon">#</span>
+              <input type="text" id="gitCommit" placeholder="e.g. v3.2.1  or  a4f8c2d" style="font-family:'Fira Code',monospace;" oninput="updatePreview()" />
+            </div>
+            <div class="field-hint">Pin analysis to a specific commit or release tag.</div>
+          </div>
+        </div>
+
+      </div><!-- /panel-git -->
+
+      <!-- ══ LOCAL DIRECTORY PANEL ══ -->
+      <div id="panel-local" class="source-panel" style="display:none;">
+
+        <div class="notif warn" style="margin-bottom:20px;">
+          <span class="notif-icon">⚠</span>
+          <span><strong>Fallback mode.</strong> Use when Git connectivity is unavailable (VPN issues, air-gapped environments, or local checkout already present). The pipeline will read files directly from the specified path.</span>
+        </div>
+
+        <!-- DRAG & DROP ZONE -->
+        <div class="dropzone" id="dropzone"
+          ondragover="onDragOver(event)"
+          ondragleave="onDragLeave(event)"
+          ondrop="onDrop(event)"
+          onclick="document.getElementById('dirFileInput').click()">
+          <div class="dropzone-icon">📂</div>
+          <div class="dropzone-title">Drop your project folder here</div>
+          <div class="dropzone-sub">or click to browse — select the <strong>root directory</strong> of your MapReduce project</div>
+          <div class="dropzone-hint">Accepts any folder structure. The scanner will auto-detect Java source files.</div>
+          <input type="file" id="dirFileInput" webkitdirectory multiple style="display:none" onchange="handleDirSelect(this)" />
+        </div>
+
+        <!-- SCANNED FILE TREE (shown after selection) -->
+        <div id="localScanResult" style="display:none; margin-top:16px;">
+          <div class="scan-result-header">
+            <div class="scan-result-title" id="scanResultTitle">— files detected</div>
+            <button class="scan-clear-btn" onclick="clearLocalDir()">✕ Clear</button>
+          </div>
+          <div class="file-tree" id="fileTree"></div>
+          <div class="scan-stats" id="scanStats"></div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- MANUAL PATH ENTRY (alternative to drag-drop) -->
+        <div style="margin-bottom:6px; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text3);">— or enter path manually</div>
+
+        <div class="field-group cols-1" style="margin-bottom:20px;">
+          <div class="field">
+            <label><span class="required-dot"></span> Absolute Directory Path</label>
+            <div class="input-icon-wrap validated-wrap">
+              <span class="icon">📁</span>
+              <input type="text" id="localPath"
+                placeholder="/home/user/projects/my-mr-project  or  C:\Users\dev\mr-project"
+                oninput="validateLocalPath(this)"
+                style="font-family:'Fira Code',monospace; font-size:12px;" />
+              <span class="check-icon" id="localPathCheck" style="display:none;color:var(--green)">✓</span>
+            </div>
+            <div class="field-hint">Full absolute path to the project root on the machine running the pipeline agent.</div>
+          </div>
+        </div>
+
+        <div class="field-group cols-2">
+          <div class="field">
+            <label><span class="optional-tag">optional</span> Source sub-directory</label>
+            <div class="input-icon-wrap">
+              <span class="icon">↳</span>
+              <input type="text" id="localSubdir"
+                placeholder="e.g. src/main/java"
+                oninput="updatePreview()"
+                style="font-family:'Fira Code',monospace; font-size:12px;" />
+            </div>
+            <div class="field-hint">Restrict scanning to a sub-path within the root directory.</div>
+          </div>
+          <div class="field">
+            <label><span class="optional-tag">optional</span> File inclusion pattern</label>
+            <div class="input-icon-wrap">
+              <span class="icon">🔍</span>
+              <input type="text" id="localPattern"
+                placeholder="**/*.java  (default)"
+                oninput="updatePreview()"
+                style="font-family:'Fira Code',monospace; font-size:12px;" />
+            </div>
+            <div class="field-hint">Glob pattern to filter which files are scanned. Default: all .java files.</div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- LOCAL SCAN OPTIONS -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);margin-bottom:12px;">Local Scan Options</div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-name">Recurse into sub-modules</div>
+            <div class="toggle-desc">Also scan nested Maven modules or Gradle sub-projects found under the root.</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" checked id="localRecurse" onchange="updatePreview()" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-name">Skip build output directories</div>
+            <div class="toggle-desc">Ignore <code style="font-family:'Fira Code',monospace;font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px;">target/</code>, <code style="font-family:'Fira Code',monospace;font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px;">build/</code>, <code style="font-family:'Fira Code',monospace;font-size:11px;background:var(--bg3);padding:1px 4px;border-radius:3px;">.gradle/</code> automatically.</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" checked id="localSkipBuild" onchange="updatePreview()" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-name">Read pom.xml / build.gradle for dependency risk scan</div>
+            <div class="toggle-desc">Parse local build files to extract dependency list for custom library risk detection.</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" checked id="localReadBuild" onchange="updatePreview()" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+      </div><!-- /panel-local -->
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SECTION 2: BUILD TOOL -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec-build">
+    <div class="section-header" onclick="toggleSection('sec-build')">
+      <div class="section-header-left">
+        <div class="section-icon" style="background:rgba(251,191,36,0.1);">⚙️</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Build Tool</div>
+          <div class="section-subtitle">Target project packaging system</div>
+        </div>
+      </div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+
+      <div class="build-toggle" id="buildToggle">
+        <label class="build-option selected" onclick="selectBuild('maven',this)">
+          <input type="radio" name="build" value="maven" checked />
+          <div class="build-icon">🏛️</div>
+          <div class="build-label">Maven</div>
+          <div class="build-desc">pom.xml · standard enterprise</div>
+        </label>
+        <label class="build-option" onclick="selectBuild('gradle',this)">
+          <input type="radio" name="build" value="gradle" />
+          <div class="build-icon">🐘</div>
+          <div class="build-label">Gradle</div>
+          <div class="build-desc">build.gradle.kts · modern DSL</div>
+        </label>
+      </div>
+
+      <div id="maven-opts" style="margin-top:16px;">
+        <div class="notif info">
+          <span class="notif-icon">ℹ</span>
+          <span>Generated project will use <strong>Maven Shade Plugin</strong> for uber-JAR packaging, <strong>scala-maven-plugin</strong> for Scala compilation, and standard <code>src/main/scala</code> layout.</span>
+        </div>
+      </div>
+
+      <div id="gradle-opts" style="margin-top:16px;display:none;">
+        <div class="notif info">
+          <span class="notif-icon">ℹ</span>
+          <span>Generated project will use <strong>Shadow plugin</strong> for uber-JAR, <strong>Kotlin DSL</strong> (build.gradle.kts) and standard Scala source sets.</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SECTION 3: TARGET VERSIONS -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec-versions">
+    <div class="section-header" onclick="toggleSection('sec-versions')">
+      <div class="section-header-left">
+        <div class="section-icon" style="background:rgba(167,139,250,0.1);">📦</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Target Library Versions</div>
+          <div class="section-subtitle">Spark, Scala, JDK and Hadoop</div>
+        </div>
+      </div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+
+      <!-- SPARK -->
+      <div class="field" style="margin-bottom:20px;">
+        <label><span class="required-dot"></span> Spark Version</label>
+        <div class="version-grid" id="sparkVersions">
+          <div class="version-pill selected" onclick="selectVersion('spark', '4.0.1', this)">4.0.1 <span class="pill-tag rec">rec</span></div>
+          <div class="version-pill" onclick="selectVersion('spark', '3.5.1', this)">3.5.1 <span class="pill-tag lts">lts</span></div>
+          <div class="version-pill" onclick="selectVersion('spark', '3.4.2', this)">3.4.2 <span class="pill-tag lts">lts</span></div>
+          <div class="version-pill" onclick="selectVersion('spark', '3.3.4', this)">3.3.4 <span class="pill-tag old">eol</span></div>
+          <div class="version-pill" onclick="selectVersion('spark', '3.2.4', this)">3.2.4 <span class="pill-tag old">eol</span></div>
+          <div class="version-pill" style="border-style:dashed;" onclick="customVersion('spark', this)">+ custom</div>
+        </div>
+        <input type="text" id="spark-custom" placeholder="Enter custom Spark version e.g. 3.5.3" style="display:none;margin-top:8px;" />
+      </div>
+
+      <!-- SCALA -->
+      <div class="field" style="margin-bottom:20px;">
+        <label><span class="required-dot"></span> Scala Version</label>
+        <div class="version-grid" id="scalaVersions">
+          <div class="version-pill selected" onclick="selectVersion('scala', '2.13.16', this)">2.13.16 <span class="pill-tag rec">rec</span></div>
+          <div class="version-pill" onclick="selectVersion('scala', '2.12.18', this)">2.12.18 <span class="pill-tag lts">lts</span></div>
+          <div class="version-pill" onclick="selectVersion('scala', '2.11.12', this)">2.11.12 <span class="pill-tag old">eol</span></div>
+          <div class="version-pill" style="border-style:dashed;" onclick="customVersion('scala', this)">+ custom</div>
+        </div>
+        <input type="text" id="scala-custom" placeholder="Enter custom Scala version e.g. 3.3.0" style="display:none;margin-top:8px;" />
+        <div class="field-hint" id="scala-compat-hint" style="margin-top:6px; color:var(--green);">✓ Spark 4.0.1 is compatible with Scala 2.13.x</div>
+      </div>
+
+      <!-- JDK / HADOOP -->
+      <div class="field-group cols-2">
+        <div class="field">
+          <label><span class="required-dot"></span> JDK Version</label>
+          <div class="version-grid" id="jdkVersions">
+            <div class="version-pill selected" onclick="selectVersion('jdk','17',this)">JDK 17 <span class="pill-tag rec">rec</span></div>
+            <div class="version-pill" onclick="selectVersion('jdk','11',this)">JDK 11 <span class="pill-tag lts">lts</span></div>
+            <div class="version-pill" onclick="selectVersion('jdk','21',this)">JDK 21 <span class="pill-tag rec">lts</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label><span class="required-dot"></span> Hadoop Version</label>
+          <div class="version-grid" id="hadoopVersions">
+            <div class="version-pill selected" onclick="selectVersion('hadoop','3.4.2',this)">3.4.2 <span class="pill-tag rec">rec</span></div>
+            <div class="version-pill" onclick="selectVersion('hadoop','3.3.6',this)">3.3.6 <span class="pill-tag lts">lts</span></div>
+            <div class="version-pill" onclick="selectVersion('hadoop','3.2.4',this)">3.2.4 <span class="pill-tag old">old</span></div>
+            <div class="version-pill" onclick="selectVersion('hadoop','2.10.2',this)">2.10.2 <span class="pill-tag old">eol</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SECTION 4: API APPROACH -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec-api">
+    <div class="section-header" onclick="toggleSection('sec-api')">
+      <div class="section-header-left">
+        <div class="section-icon" style="background:rgba(52,211,153,0.1);">⚡</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Target Code API Strategy</div>
+          <div class="section-subtitle">Generated Spark code style and approach</div>
+        </div>
+      </div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+
+      <div class="notif success">
+        <span class="notif-icon">✓</span>
+        <span><strong>DataFrame API is enforced</strong> as the primary generated code target. RDD fallback is available only for unsupported transformations.</span>
+      </div>
+
+      <div class="api-toggle">
+        <label class="api-option selected" onclick="selectApi('dataframe', this)">
+          <input type="radio" name="api" value="dataframe" checked />
+          <div class="api-option-head">
+            <span class="api-option-icon">🗂️</span>
+            <span class="api-option-name">DataFrame / Dataset API <span class="rec-tag">enforced</span></span>
+          </div>
+          <div class="api-option-desc">Type-safe Dataset[T] and untyped DataFrame operations. Catalyst optimizer, Tungsten execution engine. Best performance and maintainability.</div>
+        </label>
+        <label class="api-option locked" title="Disabled: RDD only available as fallback for unsupported ops">
+          <input type="radio" name="api" value="rdd" disabled />
+          <div class="api-option-head">
+            <span class="api-option-icon">🔒</span>
+            <span class="api-option-name">RDD API only</span>
+          </div>
+          <div class="api-option-desc">Low-level RDD operations. Not recommended — bypasses Catalyst optimizer. Available only as fallback for specific unsupported transformations.</div>
+        </label>
+      </div>
+
+      <hr class="divider" />
+
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);margin-bottom:12px;">Code Generation Options</div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-name">Generate Dataset[T] typed models</div>
+          <div class="toggle-desc">Emit case class models for all schema types. Enables compile-time type safety.</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-name">Emit SQL equivalent alongside DataFrame</div>
+          <div class="toggle-desc">Generate Spark SQL string equivalents as inline comments for each transformation.</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-name">Include RDD fallback stubs for unsupported ops</div>
+          <div class="toggle-desc">When a transformation has no clean DataFrame equivalent, emit a typed RDD stub with a TODO annotation.</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-name">Generate unit test scaffolds</div>
+          <div class="toggle-desc">Emit ScalaTest specs for each service class with sample input/output fixtures.</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- SECTION 5: RISK DETECTION -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="section" id="sec-risk">
+    <div class="section-header" onclick="toggleSection('sec-risk')">
+      <div class="section-header-left">
+        <div class="section-icon" style="background:rgba(248,113,113,0.1);">🛡️</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Custom Library Risk Detection</div>
+          <div class="section-subtitle">Detect internal / third-party library dependencies that may not be available on the Spark cluster</div>
+        </div>
+      </div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+
+      <div class="notif warn">
+        <span class="notif-icon">⚠</span>
+        <span>Any import or Maven dependency whose groupId matches a configured prefix will be flagged. These may not exist in the target Spark environment or may have breaking API changes.</span>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);margin-bottom:10px;">Package / GroupId Prefix Patterns</div>
+      <div class="field-hint" style="margin-bottom:14px;">The scanner will flag any <code style="background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:11px;">import</code> statement or <code style="background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:11px;">pom.xml</code> / <code style="background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:11px;">build.gradle</code> dependency that begins with any of these prefixes.</div>
+
+      <div class="risk-pattern-list" id="riskPatternList">
+        <!-- pre-populated patterns -->
+      </div>
+
+      <button class="add-pattern-btn" onclick="addRiskPattern()">
+        + Add pattern prefix
+      </button>
+
+      <hr class="divider" />
+
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);margin-bottom:10px;">Risk Action on Detection</div>
+
+      <div class="risk-level-row">
+        <label class="risk-level-option warn-level selected" onclick="selectRiskLevel('warn', this)">
+          <input type="radio" name="riskLevel" value="warn" checked />
+          <div class="risk-level-label">⚠ Warn &amp; Continue</div>
+          <div class="risk-level-desc">Flag in report, codegen proceeds</div>
+        </label>
+        <label class="risk-level-option block-level" onclick="selectRiskLevel('block', this)">
+          <input type="radio" name="riskLevel" value="block" />
+          <div class="risk-level-label">🛑 Block Pipeline</div>
+          <div class="risk-level-desc">Halt migration, require human sign-off</div>
+        </label>
+        <label class="risk-level-option info-level" onclick="selectRiskLevel('info', this)">
+          <input type="radio" name="riskLevel" value="info" />
+          <div class="risk-level-label">ℹ Info Only</div>
+          <div class="risk-level-desc">Log silently, no pipeline impact</div>
+        </label>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-name">Scan transitive dependencies</div>
+          <div class="toggle-desc">Also check libraries pulled in transitively via pom.xml / build.gradle dependency trees.</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-name">Generate risk report section</div>
+          <div class="toggle-desc">Include a dedicated "Custom Library Risk" section in the final migration report with suggested Spark-native replacements.</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CONFIG PREVIEW -->
+  <div class="section" id="sec-preview">
+    <div class="section-header" onclick="toggleSection('sec-preview')">
+      <div class="section-header-left">
+        <div class="section-icon" style="background:rgba(94,234,212,0.08);">📋</div>
+        <div class="section-title-wrap">
+          <div class="section-title">Configuration Summary</div>
+          <div class="section-subtitle">Live preview of pipeline config JSON</div>
+        </div>
+      </div>
+      <div class="section-chevron">▼</div>
+    </div>
+    <div class="section-body">
+      <div class="config-preview" id="configPreview">
+        <span class="c">// pipeline config will render here as you fill the form</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBMIT BAR -->
+  <div class="submit-bar">
+    <div class="submit-inner">
+      <div class="submit-status">
+        <div class="submit-status-dot" id="statusDot"></div>
+        <div class="submit-status-text" id="statusText">Complete required fields to begin pipeline</div>
+      </div>
+      <div class="submit-actions">
+        <button class="btn-secondary" onclick="resetForm()">Reset</button>
+        <button class="btn-primary" id="launchBtn" onclick="launchPipeline()">
+          Launch Pipeline →
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+// ── STATE ──
+const state = {
+  sourceMode: 'git',
+  // git
+  repo: '', branch: '', gitSubdir: '', gitCommit: '',
+  // local
+  localPath: '', localSubdir: '', localPattern: '',
+  localFiles: [],
+  // build / versions / api
+  build: 'maven',
+  spark: '4.0.1', scala: '2.13.16', jdk: '17', hadoop: '3.4.2',
+  api: 'dataframe', riskLevel: 'warn',
+  riskPatterns: ['com.company-name', 'com.internal', 'org.internal-shared']
+};
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  renderRiskPatterns();
+  updatePreview();
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#branchDrop')) {
+      const list = document.getElementById('branchList');
+      const toggle = document.getElementById('branchToggle');
+      if (list) list.classList.remove('open');
+      if (toggle) toggle.classList.remove('open');
+    }
+  });
+});
+
+// ── SECTION COLLAPSE ──
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+// ── SOURCE MODE SWITCHING ──
+function switchSourceMode(mode) {
+  state.sourceMode = mode;
+  document.getElementById('panel-git').style.display   = mode === 'git'   ? 'block' : 'none';
+  document.getElementById('panel-local').style.display = mode === 'local' ? 'block' : 'none';
+  document.getElementById('tab-git').classList.toggle('active',   mode === 'git');
+  document.getElementById('tab-local').classList.toggle('active', mode === 'local');
+
+  // update section subtitle
+  const sub = document.getElementById('repoSectionSubtitle');
+  if (sub) sub.textContent = mode === 'git'
+    ? 'Git URL, credentials and target branch · or scan a local directory'
+    : 'Local directory fallback — Git connectivity not required';
+
+  updatePreview();
+  updateStatus();
+}
+
+// ── GIT: REPO VALIDATION ──
+function validateRepo(input) {
+  state.repo = input.value;
+  const check = document.getElementById('repoCheck');
+  const valid = input.value.match(/^(https?:\/\/|git@)/);
+  if (check) check.style.display = valid ? 'block' : 'none';
+  updatePreview();
+  updateStatus();
+}
+
+// ── GIT: BRANCH ──
+function toggleBranchDrop() {
+  const list = document.getElementById('branchList');
+  const toggle = document.getElementById('branchToggle');
+  list.classList.toggle('open');
+  toggle.classList.toggle('open');
+}
+
+function selectBranch(val, label) {
+  state.branch = val;
+  document.getElementById('branchSelected').textContent = label;
+  document.getElementById('branchSelected').style.color = 'var(--cyan)';
+  document.getElementById('branchList').classList.remove('open');
+  document.getElementById('branchToggle').classList.remove('open');
+  updatePreview();
+  updateStatus();
+}
+
+function typeBranch(val) {
+  if (val.trim()) selectBranch(val.trim(), val.trim());
+}
+
+// ── LOCAL: PATH VALIDATION ──
+function validateLocalPath(input) {
+  state.localPath = input.value.trim();
+  const check = document.getElementById('localPathCheck');
+  // valid if looks like an absolute path (Unix or Windows)
+  const valid = /^(\/|[A-Za-z]:\\)/.test(state.localPath) && state.localPath.length > 3;
+  if (check) check.style.display = valid ? 'block' : 'none';
+  updatePreview();
+  updateStatus();
+}
+
+// ── LOCAL: DRAG & DROP ──
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.add('dragover');
+}
+
+function onDragLeave(e) {
+  document.getElementById('dropzone').classList.remove('dragover');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('dragover');
+  const items = e.dataTransfer.items;
+  const files = [];
+  if (items) {
+    for (let i = 0; i < items.length; i++) {
+      const entry = items[i].webkitGetAsEntry && items[i].webkitGetAsEntry();
+      if (entry) readEntry(entry, '', files);
+    }
+    // slight delay for async reads
+    setTimeout(() => processFiles(files), 300);
+  }
+}
+
+function readEntry(entry, path, files) {
+  if (entry.isFile) {
+    entry.file(f => files.push({ name: f.name, path: (path ? path + '/' : '') + f.name, size: f.size }));
+  } else if (entry.isDirectory) {
+    const reader = entry.createReader();
+    reader.readEntries(entries => entries.forEach(e => readEntry(e, (path ? path + '/' : '') + entry.name, files)));
+  }
+}
+
+function handleDirSelect(input) {
+  const files = Array.from(input.files).map(f => ({
+    name: f.name,
+    path: f.webkitRelativePath || f.name,
+    size: f.size
+  }));
+  processFiles(files);
+}
+
+function processFiles(files) {
+  if (!files.length) return;
+  state.localFiles = files;
+
+  // Derive root from first file path
+  const rootParts = (files[0].path || '').split('/');
+  const rootName = rootParts.length > 1 ? rootParts[0] : 'project';
+  if (!state.localPath) {
+    state.localPath = '~/' + rootName;
+    const pathInput = document.getElementById('localPath');
+    if (pathInput) { pathInput.value = state.localPath; }
+  }
+
+  renderFileTree(files, rootName);
+  updatePreview();
+  updateStatus();
+
+  // mark dropzone as done
+  const dz = document.getElementById('dropzone');
+  dz.classList.add('has-files');
+  dz.querySelector('.dropzone-title').textContent = `✓ ${rootName} loaded`;
+  dz.querySelector('.dropzone-sub').textContent = `${files.length} files found — click to replace`;
+}
+
+function renderFileTree(files, root) {
+  const result = document.getElementById('localScanResult');
+  const tree   = document.getElementById('fileTree');
+  const stats  = document.getElementById('scanStats');
+  const title  = document.getElementById('scanResultTitle');
+  result.style.display = 'block';
+
+  // counts
+  const java    = files.filter(f => f.name.endsWith('.java'));
+  const xmls    = files.filter(f => f.name.endsWith('.xml') || f.name.endsWith('.gradle'));
+  const others  = files.filter(f => !f.name.endsWith('.java') && !f.name.endsWith('.xml') && !f.name.endsWith('.gradle'));
+
+  title.textContent = `${files.length} files detected in /${root}`;
+
+  // MR role detection heuristics
+  const roleOf = name => {
+    const n = name.toLowerCase();
+    if (n.includes('driver'))     return 'driver';
+    if (n.includes('mapper'))     return 'mapper';
+    if (n.includes('reducer'))    return 'reducer';
+    if (n.includes('combiner'))   return 'mapper';
+    if (n.includes('partitioner'))return 'reducer';
+    return null;
+  };
+
+  // Build simple tree display (show up to 30 files)
+  const shown = files.slice(0, 30);
+  let html = `<span class="ft-dir">📁 ${root}/</span>\n`;
+  const dirs = {};
+  shown.forEach(f => {
+    const parts = f.path.split('/');
+    const dir   = parts.length > 2 ? parts.slice(1, -1).join('/') : '';
+    const fname = parts[parts.length - 1];
+    if (dir && !dirs[dir]) {
+      dirs[dir] = true;
+      html += `  <span class="ft-dir">📁 ${dir}/</span>\n`;
+    }
+    const indent = dir ? '    ' : '  ';
+    const role = roleOf(fname);
+    if (fname.endsWith('.java')) {
+      const cls = role ? `ft-${role}` : 'ft-java';
+      const tag = role ? `<span class="ft-tag ${role}">${role}</span>` : '';
+      html += `${indent}<span class="${cls}">☕ ${fname}</span>${tag}\n`;
+    } else if (fname.match(/\.(xml|gradle|kts)$/)) {
+      html += `${indent}<span class="ft-xml">📄 ${fname}</span>\n`;
+    } else {
+      html += `${indent}<span class="ft-other">· ${fname}</span>\n`;
+    }
+  });
+  if (files.length > 30) html += `  <span class="ft-other">… and ${files.length - 30} more files</span>\n`;
+  tree.innerHTML = html;
+
+  const drivers  = java.filter(f => roleOf(f.name) === 'driver').length;
+  const mappers  = java.filter(f => roleOf(f.name) === 'mapper').length;
+  const reducers = java.filter(f => roleOf(f.name) === 'reducer').length;
+  stats.innerHTML = `
+    <div class="scan-stat">📦 <strong>${files.length}</strong> total</div>
+    <div class="scan-stat">☕ <strong>${java.length}</strong> Java</div>
+    <div class="scan-stat">📄 <strong>${xmls.length}</strong> build files</div>
+    <div class="scan-stat" style="color:var(--green)">⎇ <strong>${drivers}</strong> drivers</div>
+    <div class="scan-stat" style="color:var(--blue)">→ <strong>${mappers}</strong> mappers</div>
+    <div class="scan-stat" style="color:var(--pink)">← <strong>${reducers}</strong> reducers</div>
+  `;
+}
+
+function clearLocalDir() {
+  state.localFiles = [];
+  state.localPath  = '';
+  document.getElementById('localScanResult').style.display = 'none';
+  document.getElementById('fileTree').innerHTML = '';
+  const dz = document.getElementById('dropzone');
+  dz.classList.remove('has-files');
+  dz.querySelector('.dropzone-title').textContent = 'Drop your project folder here';
+  dz.querySelector('.dropzone-sub').innerHTML = 'or click to browse — select the <strong>root directory</strong> of your MapReduce project';
+  const pathInput = document.getElementById('localPath');
+  if (pathInput) { pathInput.value = ''; document.getElementById('localPathCheck').style.display='none'; }
+  const fi = document.getElementById('dirFileInput');
+  if (fi) fi.value = '';
+  updatePreview();
+  updateStatus();
+}
+
+// ── BUILD TOOL ──
+function selectBuild(val, el) {
+  state.build = val;
+  document.querySelectorAll('.build-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('maven-opts').style.display = val === 'maven' ? 'block' : 'none';
+  document.getElementById('gradle-opts').style.display = val === 'gradle' ? 'block' : 'none';
+  updatePreview();
+}
+
+// ── VERSION PILLS ──
+function selectVersion(type, val, el) {
+  state[type] = val;
+  const container = el.closest('.version-grid') || el.parentElement;
+  container.querySelectorAll('.version-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  const custom = document.getElementById(type + '-custom');
+  if (custom) custom.style.display = 'none';
+  if (type === 'spark' || type === 'scala') updateCompatHint();
+  updatePreview();
+}
+
+function customVersion(type, el) {
+  const input = document.getElementById(type + '-custom');
+  if (input) { input.style.display = 'block'; input.focus(); input.oninput = () => { state[type] = input.value; updatePreview(); }; }
+  el.parentElement.querySelectorAll('.version-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function updateCompatHint() {
+  const hint = document.getElementById('scala-compat-hint');
+  if (!hint) return;
+  const s = state.spark, sc = state.scala;
+  const ok = (s.startsWith('4') && sc.startsWith('2.13'))
+           || (s.startsWith('3.5') && (sc.startsWith('2.13') || sc.startsWith('2.12')))
+           || (s.startsWith('3.4') && (sc.startsWith('2.13') || sc.startsWith('2.12')))
+           || (s.startsWith('3.3') && sc.startsWith('2.12'))
+           || (s.startsWith('3.2') && sc.startsWith('2.12'));
+  hint.style.color = ok ? 'var(--green)' : 'var(--red)';
+  hint.textContent = ok
+    ? `✓ Spark ${s} is compatible with Scala ${sc}`
+    : `✗ Spark ${s} may not be compatible with Scala ${sc} — verify before proceeding`;
+}
+
+// ── API STRATEGY ──
+function selectApi(val, el) {
+  state.api = val;
+  document.querySelectorAll('.api-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  updatePreview();
+}
+
+// ── RISK PATTERNS ──
+function renderRiskPatterns() {
+  const list = document.getElementById('riskPatternList');
+  list.innerHTML = '';
+  state.riskPatterns.forEach((pat, i) => {
+    const row = document.createElement('div');
+    row.className = 'risk-pattern-row';
+    row.innerHTML = `
+      <span class="risk-pattern-prefix">prefix</span>
+      <input class="risk-pattern-input" type="text" value="${pat}"
+        onchange="updatePattern(${i}, this.value)"
+        oninput="updatePattern(${i}, this.value)"
+        placeholder="e.g. com.yourcompany.xyz" />
+      <button class="risk-remove-btn" onclick="removePattern(${i})" title="Remove">×</button>
+    `;
+    list.appendChild(row);
+  });
+  updatePreview();
+}
+
+function addRiskPattern() {
+  state.riskPatterns.push('');
+  renderRiskPatterns();
+  const inputs = document.querySelectorAll('.risk-pattern-input');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function updatePattern(i, val) { state.riskPatterns[i] = val; updatePreview(); }
+function removePattern(i)      { state.riskPatterns.splice(i, 1); renderRiskPatterns(); }
+
+// ── RISK LEVEL ──
+function selectRiskLevel(val, el) {
+  state.riskLevel = val;
+  document.querySelectorAll('.risk-level-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  updatePreview();
+}
+
+// ── CONFIG PREVIEW ──
+function updatePreview() {
+  const patterns = state.riskPatterns.filter(p => p.trim());
+  const srcBlock = state.sourceMode === 'git'
+    ? { mode: 'git', repoUrl: state.repo || '<not set>', branch: state.branch || '<not set>',
+        subdir: document.getElementById('gitSubdir')?.value || '', commit: document.getElementById('gitCommit')?.value || '' }
+    : { mode: 'local', path: state.localPath || '<not set>',
+        subdir: document.getElementById('localSubdir')?.value || '',
+        pattern: document.getElementById('localPattern')?.value || '**/*.java',
+        recurseSubmodules: document.getElementById('localRecurse')?.checked ?? true,
+        skipBuildDirs: document.getElementById('localSkipBuild')?.checked ?? true,
+        filesDetected: state.localFiles.length };
+
+  const cfg = {
+    source: srcBlock,
+    build: { tool: state.build },
+    versions: { spark: state.spark, scala: state.scala, jdk: state.jdk, hadoop: state.hadoop },
+    codegen: { apiStrategy: 'dataframe_enforced', rddFallback: true, typedDataset: true },
+    riskDetection: { prefixes: patterns, action: state.riskLevel, transitiveDepScan: true }
+  };
+
+  const el = document.getElementById('configPreview');
+  el.innerHTML = syntaxHighlight(JSON.stringify(cfg, null, 2));
+}
+
+function syntaxHighlight(json) {
+  return json
+    .replace(/("[\w]+")\s*:/g, '<span class="k">$1</span>:')
+    .replace(/:\s*(".*?")/g, ': <span class="v">$1</span>')
+    .replace(/:\s*(true|false)/g, ': <span class="s">$1</span>')
+    .replace(/:\s*(\d[\d.]*)/g, ': <span class="s">$1</span>');
+}
+
+// ── STATUS ──
+function updateStatus() {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  let ready = false, label = '';
+
+  if (state.sourceMode === 'git') {
+    ready = !!(state.repo && state.branch);
+    label = ready
+      ? `Git · ${state.repo.split('/').slice(-1)[0].replace('.git','')} @ ${state.branch}`
+      : 'Set Repository URL and Branch to continue';
+  } else {
+    ready = !!(state.localPath || state.localFiles.length);
+    label = ready
+      ? `Local · ${state.localPath || state.localFiles[0]?.path.split('/')[0] || 'project'} (${state.localFiles.length || '?'} files)`
+      : 'Set a local directory path or drop files to continue';
+  }
+
+  dot.className  = 'submit-status-dot' + (ready ? ' ready' : '');
+  text.textContent = label;
+}
+
+// ── LAUNCH ──
+function launchPipeline() {
+  const gitOk   = state.sourceMode === 'git'   && state.repo && state.branch;
+  const localOk = state.sourceMode === 'local' && (state.localPath || state.localFiles.length);
+  if (!gitOk && !localOk) {
+    alert(state.sourceMode === 'git'
+      ? 'Please set Repository URL and Branch before launching.'
+      : 'Please set a local directory path or drop a project folder before launching.');
+    return;
+  }
+  const btn = document.getElementById('launchBtn');
+  btn.textContent = '⟳ Launching...';
+  btn.style.background = 'var(--green)';
+  setTimeout(() => {
+    btn.textContent = '✓ Pipeline Queued';
+    btn.style.boxShadow = '0 4px 24px rgba(52,211,153,0.35)';
+  }, 1200);
+}
+
+// ── RESET ──
+function resetForm() {
+  if (!confirm('Reset all configuration?')) return;
+  location.reload();
+}
+</script>
+</body>
+</html>

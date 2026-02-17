@@ -1,0 +1,10 @@
+{
+  "type": "record",
+  "name": "WordCount",
+  "namespace": "com.example.mr",
+  "fields": [
+    {"name": "word",  "type": "string"},
+    {"name": "count", "type": "int"},
+    {"name": "source_file", "type": ["null", "string"], "default": null}
+  ]
+}

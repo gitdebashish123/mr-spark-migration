@@ -1,0 +1,92 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mr-spark-migration"
+version = "0.1.0"
+description = "Agentic MapReduce → Spark/Scala migration pipeline"
+requires-python = ">=3.12"
+dependencies = [
+    # ── UI ──
+    "streamlit==1.28.1",          # pinned: pre-built wheels, avoids pyarrow conflicts
+
+    # ── AGENT ORCHESTRATION ──
+    "langgraph>=0.2.0",
+    "langchain-core>=0.2.0",
+    "langchain-anthropic>=0.1.20",
+    "langchain-google-genai>=1.0.6",
+
+    # ── LLM PROVIDERS ──
+    "anthropic>=0.30.0",
+    "google-generativeai>=0.7.0",
+
+    # ── MCP TOOLING ──
+    "fastmcp>=0.4.0",
+
+    # ── STATIC ANALYSIS ──
+    "javalang>=0.13.0",
+
+    # ── SCHEMA / DATA ──
+    "fastavro>=1.9.0",            # pyarrow removed — use fastavro only
+
+    # ── GIT ──
+    "gitpython>=3.1.43",
+
+    # ── VALIDATION ──
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.3.0",
+
+    # ── RETRY / RESILIENCE ──
+    "tenacity>=8.3.0",
+
+    # ── SYNTAX HIGHLIGHTING ──
+    "pygments>=2.18.0",
+
+    # ── FILE WATCHING ──
+    "watchdog>=4.0.0",
+
+    # ── UTILITIES ──
+    "python-dotenv>=1.0.1",
+    "rich>=13.7.0",
+    "structlog>=24.2.0",
+    "httpx>=0.27.0",
+    "aiofiles>=23.2.1",
+    "jinja2>=3.1.4",
+
+    # ── DEV / TEST (single-env local setup) ──
+    "pytest>=8.2.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+]
+
+[project.scripts]
+mr-migrate = "mr_spark_migration.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+# ── uv configuration ──────────────────────────────────────────────
+[tool.uv]
+# Always create/use a project-local .venv
+managed = true
+# Dev tools are included in [project.dependencies] for a single-env local setup.
+# To install: uv sync
