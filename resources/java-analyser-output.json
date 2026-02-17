@@ -1,0 +1,85 @@
+{
+  "classes": [
+    {
+      "class_name": "InvSalesAggReducer",
+      "file_path": "InvSalesAggReducer.java",
+      "package": "org.example",
+      "role": "reducer",
+      "imports": [
+        "org.apache.hadoop.io.Text",
+        "org.apache.hadoop.mapreduce.Reducer",
+        "org.apache.parquet.schema.MessageType",
+        "java.io.IOException"
+      ],
+      "extends": "Reducer<Text, Text, Void, SimpleGroup>",
+      "implements": [],
+      "raw_source": null
+    },
+    {
+      "class_name": "InventoryMapper",
+      "file_path": "InventoryMapper.java",
+      "package": "org.example",
+      "role": "mapper",
+      "imports": [
+        "org.apache.hadoop.io.LongWritable",
+        "org.apache.hadoop.io.Text",
+        "org.apache.hadoop.mapreduce.Mapper",
+        "org.apache.parquet.example.data.Group",
+        "java.io.IOException"
+      ],
+      "extends": "Mapper<LongWritable, Group, Text, Text>",
+      "implements": [],
+      "raw_source": null
+    },
+    {
+      "class_name": "InvSalesAggJob",
+      "file_path": "InvSalesAggJob.java",
+      "package": "org.example",
+      "role": "driver",
+      "imports": [
+        "org.apache.hadoop.conf.Configuration",
+        "org.apache.hadoop.conf.Configured",
+        "org.apache.hadoop.fs.Path",
+        "org.apache.hadoop.io.Text",
+        "org.apache.hadoop.mapreduce.Job",
+        "org.apache.hadoop.mapreduce.lib.input.MultipleInputs",
+        "org.apache.hadoop.util.Tool",
+        "org.apache.hadoop.util.ToolRunner",
+        "org.apache.parquet.hadoop.ParquetInputFormat",
+        "org.apache.parquet.hadoop.ParquetOutputFormat",
+        "org.apache.parquet.hadoop.metadata.CompressionCodecName",
+        "org.apache.parquet.schema.MessageType",
+        "org.apache.parquet.schema.MessageTypeParser"
+      ],
+      "extends": "Configured",
+      "implements": [
+        "Tool"
+      ],
+      "raw_source": null
+    },
+    {
+      "class_name": "SalesMapper",
+      "file_path": "SalesMapper.java",
+      "package": "org.example",
+      "role": "mapper",
+      "imports": [
+        "org.apache.hadoop.io.LongWritable",
+        "org.apache.hadoop.io.Text",
+        "org.apache.hadoop.mapreduce.Mapper",
+        "org.apache.parquet.example.data.Group",
+        "java.io.IOException"
+      ],
+      "extends": "Mapper<LongWritable, Group, Text, Text>",
+      "implements": [],
+      "raw_source": null
+    }
+  ],
+  "parse_errors": [],
+  "drivers": 1,
+  "mappers": 2,
+  "reducers": 1,
+  "combiners": 0,
+  "partitioners": 0,
+  "composite_keys": 0,
+  "unclassified": 0
+}
